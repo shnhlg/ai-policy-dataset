@@ -1,5 +1,14 @@
 # 国内外人工智能政策数据集
 
+## 完整数据集在哪 / Where Is the Full Dataset
+
+完整数据集（结构化主库、全文正文、检索数据库、中文官方库、原始附件等，约 11 GB）托管在 Hugging Face：
+
+- https://huggingface.co/datasets/LinkwiseSH/ai-policy-dataset
+- 国内镜像 / China mirror: https://hf-mirror.com/datasets/LinkwiseSH/ai-policy-dataset
+
+The full dataset (structured tables, full texts, search database, official Chinese library, raw attachments, ~11 GB) is hosted on Hugging Face at the links above. This repository contains the code / lightweight package; download the dataset from Hugging Face to run the search window.
+
 本仓库用于管理人工智能政策数据集的数据库、检索程序、清洗与翻译代码，以及跨电脑恢复和验证脚本。
 
 ## 当前发布包状态
