@@ -1,4 +1,4 @@
-# 国内外人工智能政策数据集
+﻿# 国内外人工智能政策数据集
 
 ## 完整数据集在哪 / Where Is the Full Dataset
 
@@ -58,35 +58,13 @@ ai-policy-dataset/
 ├─ scripts/
 │  ├─ build_raw_catalog.py      # 从 data/raw 重建目录数据库
 │  ├─ verify_release.py         # 发布包完整性与敏感信息检查
-│  ├─ prepare_full_release.py   # 检测并复制恢复后的完整数据库与代码
-│  └─ bootstrap_windows.ps1     # 另一台 Windows 电脑的初始化提示
+│  └─ prepare_full_release.py   # 检测并复制恢复后的完整数据库与代码
 ├─ .gitattributes               # Git LFS 规则
 ├─ .gitignore
 ├─ DATABASE_STATUS.md
 └─ README.md
 ```
 
-## 在另一台电脑上传 GitHub
-
-1. 安装 Git 或 GitHub Desktop，并安装/启用 Git LFS。
-2. 解压发布包并进入 `ai-policy-dataset` 目录。
-3. 运行：
-
-```powershell
-git lfs install
-git init
-git add .
-git commit -m "Initial AI policy dataset release"
-git branch -M main
-git remote add origin https://github.com/<账户>/<仓库>.git
-git push -u origin main
-```
-
-4. 上传前运行完整性检查：
-
-```powershell
-python scripts/verify_release.py
-```
 
 ## 大文件策略
 

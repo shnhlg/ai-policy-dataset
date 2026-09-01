@@ -1,8 +1,8 @@
-{
+﻿{
   "package": "ai-policy-dataset",
   "created_utc": "2026-08-27T03:23:55.656043+00:00",
-  "file_count": 13,
-  "total_size_bytes": 8070835,
+  "file_count": 12,
+  "total_size_bytes": 8070109,
   "files": [
     {
       "path": ".env.example",
@@ -44,12 +44,7 @@
       "size_bytes": 3375,
       "sha256": "8a86f5720f26a0fde0c2a64d3fc14433b9a1257d5a22d792843be67e9341b77c"
     },
-    {
-      "path": "scripts/bootstrap_windows.ps1",
-      "size_bytes": 726,
-      "sha256": "32c4b8696129509a2a53bd54fa6da660f5b4debf1cc6a17e450de2dfedcab3a1"
-    },
-    {
+        {
       "path": "scripts/build_raw_catalog.py",
       "size_bytes": 4802,
       "sha256": "2c184cacd227f56f4de361fa6e30831d5a5987b272615cfed7f69a1fd9eb66d4"
