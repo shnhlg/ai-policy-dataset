@@ -10,3 +10,11 @@ raw-root.txt
 *.db-shm
 *.building.db
 .test-work/
+tmp/
+data/staging/
+data/processed/*audit*cache.jsonl
+# Large source data is distributed separately; indexes are rebuilt locally.
+viewer/policy_search.db
+data/raw/
+data/processed/*.csv
+data/processed/policy_fulltexts*.jsonl

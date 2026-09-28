@@ -1,4 +1,4 @@
-"""Offline integrity, body-offset and raw-file reference checks."""
+"""Validate a release against its manifest, CSV and every body record."""
 from __future__ import annotations
 import csv
 import hashlib
@@ -8,48 +8,62 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT/'viewer'))
-from portable import resolve_raw_file
+sys.path.insert(0, str(ROOT / 'viewer'))
 
-def digest(path):
-    with path.open('rb') as handle:
-        return hashlib.file_digest(handle,'sha256').hexdigest()
 
 def verify(check_hashes=True):
-    manifest = ROOT/'migration_manifest.json'
+    from indexer import CSV_PATH, FULLTEXT_PATH, DB_PATH
+    from portable import resolve_raw_file
+    manifest = json.loads((ROOT / 'dataset_manifest.json').read_text(encoding='utf-8'))
     if check_hashes:
-        entries = json.loads(manifest.read_text(encoding='utf-8'))
-        for entry in entries:
-            path = (ROOT/entry['path']).resolve()
-            assert ROOT in path.parents, entry['path']
-            assert path.is_file() and path.stat().st_size == entry['bytes'], entry['path']
-            assert digest(path) == entry['sha256'], entry['path']
-        print(f'File SHA256 verified: {len(entries)}', flush=True)
-    with sqlite3.connect((ROOT/'viewer/policy_search.db').as_uri()+'?mode=ro',uri=True) as db:
-        assert db.execute('pragma integrity_check').fetchone()[0] == 'ok'
-        rows = db.execute('select policy_id,body_offset,body_bytes,raw_file from policies order by body_offset').fetchall()
-        assert len(rows) == 10542, len(rows)
-        body_count = 0
-        with (ROOT/'data/processed/policy_fulltexts.jsonl').open('rb') as f:
-            for pid,offset,size,raw in rows:
-                assert offset is not None and size > 0, pid
-                f.seek(offset)
-                record = json.loads(f.read(size))
-                assert record.get('policy_id') == pid, pid
-                assert str(record.get('fulltext','')).strip(), pid
-                body_count += 1
-        counts = dict(db.execute('select relevance_level,count(*) from policies group by relevance_level'))
-        categories = db.execute('select count(*) from categories').fetchone()[0]
-        linked = sum(resolve_raw_file(raw) is not None for _,_,_,raw in rows)
-    with (ROOT/'data/processed/title_translation_review_2674.csv').open(encoding='utf-8-sig',newline='') as f:
-        reviewed = sum(1 for _ in csv.DictReader(f))
-    assert reviewed == 2674, reviewed
-    result = {'records':len(rows),'body_links_verified':body_count,'relevance':counts,'categories':categories,
-              'contextual_title_reviews':reviewed,'raw_connected':linked,'raw_total':len(rows)}
-    print(json.dumps(result,ensure_ascii=False,indent=2),flush=True)
-    if linked < len(rows):
-        print('部分原始附件未连接：运行 python scripts/configure_raw.py。正文及检索不受影响。',flush=True)
-    return result
+        for item in manifest['files']:
+            path = CSV_PATH.parent / item['name']
+            assert path.stat().st_size == item['bytes'], item['name']
+            with path.open('rb') as handle:
+                assert hashlib.file_digest(handle, 'sha256').hexdigest() == item['sha256'], item['name']
+    with CSV_PATH.open(encoding='utf-8-sig', newline='') as source:
+        reader = csv.DictReader(source)
+        assert len(reader.fieldnames) == len(set(reader.fieldnames)), 'Duplicate CSV columns'
+        csv_ids = [row['policy_id'] for row in reader]
+    assert len(csv_ids) == len(set(csv_ids)) == manifest['records']
+    source = sqlite3.connect(DB_PATH.as_uri() + '?mode=ro', uri=True)
+    source.row_factory = sqlite3.Row
+    memory = sqlite3.connect(':memory:')
+    try:
+        source.backup(memory)
+        assert memory.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+        memory.execute("INSERT INTO policy_fts(policy_fts) VALUES ('integrity-check')")
+        rows = {row['policy_id']: row for row in source.execute('SELECT * FROM policies')}
+        assert set(rows) == set(csv_ids)
+        assert dict(source.execute('SELECT relevance_level,COUNT(*) FROM policies GROUP BY relevance_level')) == manifest['relevance_counts']
+        seen = set()
+        with FULLTEXT_PATH.open('rb', buffering=1024 * 1024) as handle:
+            while True:
+                offset = handle.tell()
+                line = handle.readline()
+                if not line: break
+                record = json.loads(line)
+                pid = record['policy_id']
+                assert pid in rows and pid not in seen, pid
+                row = rows[pid]
+                text = str(record.get('fulltext', ''))
+                assert (row['body_offset'], row['body_bytes']) == (offset, len(line)), pid
+                assert len(text) == row['fulltext_char_count'], pid
+                if row['content_extraction_status'] in {'non_body','mixed_source','ocr_required'}:
+                    assert not text.strip(), pid
+                seen.add(pid)
+        assert seen == set(rows)
+        connected = sum(resolve_raw_file(row['raw_file']) is not None for row in rows.values())
+        result = {'records': len(rows), 'body_positions_verified': len(seen), 'raw_available': connected,
+                  'raw_missing': len(rows) - connected, 'sqlite': sqlite3.sqlite_version,
+                  'fts_integrity': 'ok', 'hashes_checked': check_hashes}
+        print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
+        return result
+    finally:
+        memory.close(); source.close()
+
 
 if __name__ == '__main__':
+    from prepare_runtime import prepare
+    prepare()
     verify()

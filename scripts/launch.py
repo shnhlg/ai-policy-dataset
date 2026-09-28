@@ -13,7 +13,7 @@ def main():
             db.execute("CREATE VIRTUAL TABLE test USING fts5(text, tokenize='trigram')")
         except sqlite3.Error as exc:
             raise SystemExit('Python SQLite must support FTS5 trigram. Install Python 3.13.') from exc
-    for name in ('viewer/policy_search.db', 'data/processed/ai_policies_content_master.csv',
+    for name in ('data/processed/ai_policies_content_master.csv',
                  'data/processed/policy_fulltexts.jsonl', 'viewer/static/index.html'):
         if not (ROOT / name).is_file():
             raise SystemExit(f'Missing file: {name}. Fully extract the migration ZIP first.')

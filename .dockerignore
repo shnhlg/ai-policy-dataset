@@ -1,3 +1,13 @@
 *
 !Dockerfile
-!scripts/docker_serve.py
+!dataset_manifest.json
+!scripts/
+!scripts/*.py
+!tests/
+!tests/*.py
+!viewer/
+viewer/*
+!viewer/*.py
+!viewer/*.jsonl
+!viewer/static/
+!viewer/static/**

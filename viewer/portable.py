@@ -52,9 +52,15 @@ def resolve_raw_file(raw: str) -> Path | None:
         return None
     if not (parts[:2] == ('data', 'raw') or parts[:3] == ('data', 'official_zh', 'raw')):
         return None
-    local = (ROOT / Path(*parts)).resolve()
-    if ROOT in local.parents and local.is_file():
-        return local
+    source_root = Path(os.environ.get('AI_POLICY_SOURCE_ROOT', ROOT)).resolve()
+    for base in (ROOT, source_root):
+        local = (base / Path(*parts)).resolve()
+        if base in local.parents and local.is_file():
+            return local
+        if parts[:2] == ('data', 'raw'):
+            supplemental = (base / 'data' / 'official_zh' / 'raw' / relative.name).resolve()
+            if base in supplemental.parents and supplemental.is_file():
+                return supplemental
     # Existing data package contains a flat raw directory. Never trust an arbitrary path.
     for root in external_raw_roots():
         candidate = (root / relative.name).resolve()

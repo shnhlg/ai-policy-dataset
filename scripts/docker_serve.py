@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sqlite3
 import sys
 from pathlib import Path
@@ -15,6 +16,12 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
 
+    from prepare_runtime import prepare
+    if prepare() is not None:
+        # Indexer imported during staging must not retain the temporary directory.
+        os.execv(sys.executable, [sys.executable, str(ROOT / 'viewer' / 'app.py'),
+                                 '--host', args.host, '--port', str(args.port), '--no-browser'])
+
     if sys.version_info < (3, 11):
         raise SystemExit("需要 Python 3.11+")
     with sqlite3.connect(":memory:") as db:
@@ -23,7 +30,7 @@ def main() -> None:
         except sqlite3.Error as exc:
             raise SystemExit("SQLite 需要 FTS5 trigram 支持") from exc
 
-    for name in ("viewer/policy_search.db", "data/processed/ai_policies_content_master.csv",
+    for name in ("data/processed/ai_policies_content_master.csv",
                  "data/processed/policy_fulltexts.jsonl", "viewer/static/index.html"):
         if not (ROOT / name).is_file():
             raise SystemExit(f"缺少文件：{name}")

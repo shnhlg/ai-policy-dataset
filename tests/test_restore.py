@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'viewer'))
 import app
 from portable import resolve_raw_file, snapshot_is_current
+from indexer import DB_PATH
+MANIFEST = json.loads((ROOT / 'dataset_manifest.json').read_text(encoding='utf-8'))
 
 class RestoredViewerTests(unittest.TestCase):
     @classmethod
@@ -34,16 +36,17 @@ class RestoredViewerTests(unittest.TestCase):
             return json.load(r)
 
     def test_health(self):
-        self.assertEqual(self.get('/health')['records'],10542)
+        self.assertEqual(self.get('/health')['records'],MANIFEST['records'])
 
     def test_related_and_quarantine(self):
-        self.assertEqual(self.get('/api/search?relevance=high')['total'],2739)
-        self.assertEqual(self.get('/api/search?relevance=unrelated')['total'],6874)
-        self.assertEqual(self.get('/api/search?relevance=review')['total'],929)
+        counts = MANIFEST['relevance_counts']
+        self.assertEqual(self.get('/api/search?relevance=high')['total'],counts['明确相关'] + counts['AI复核相关'])
+        self.assertEqual(self.get('/api/search?relevance=unrelated')['total'],counts['AI复核无关'])
+        self.assertEqual(self.get('/api/search?relevance=review')['total'],counts['待人工复核'])
 
     def test_stats_categories(self):
         result=self.get('/api/stats')
-        self.assertEqual(result['total'],10542)
+        self.assertEqual(result['total'],MANIFEST['records'])
         for name in ('政策主题','政策手段','应用领域'):
             self.assertTrue(result['category_facets'][name])
 
@@ -67,8 +70,8 @@ class RestoredViewerTests(unittest.TestCase):
             self.assertEqual(result['total'],facet['count'])
 
     def test_translated_title_and_body(self):
-        with sqlite3.connect(ROOT/'viewer/policy_search.db') as c:
-            pid=c.execute("select policy_id from policies where title_zh<>'' and language='en' and body_offset is not null limit 1").fetchone()[0]
+        with sqlite3.connect(DB_PATH) as c:
+            pid=c.execute("select policy_id from policies where title_zh<>'' and language='en' and content_extraction_status='extracted' and fulltext_char_count>1000 and body_offset is not null limit 1").fetchone()[0]
         detail=self.get('/api/policies/'+quote(pid))
         self.assertTrue(detail['title_zh'])
         self.assertTrue(detail['title_original'])

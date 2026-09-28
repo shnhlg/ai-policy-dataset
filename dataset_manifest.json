@@ -1,0 +1,22 @@
+{
+  "version": "2026-09-28",
+  "records": 10547,
+  "relevance_counts": {
+    "明确相关": 2712,
+    "AI复核相关": 32,
+    "AI复核无关": 6874,
+    "待人工复核": 929
+  },
+  "files": [
+    {
+      "name": "ai_policies_content_master.csv",
+      "bytes": 37335286,
+      "sha256": "77510c44355ca8a93530b17082f52b26691373ac86eb2d6a5558fbe74d3e7c43"
+    },
+    {
+      "name": "policy_fulltexts.jsonl",
+      "bytes": 1374711539,
+      "sha256": "2ecf8dabae7ab4a731431fa92e27cfd51cbc6e7e43a92c98ddf393d93a9e4c87"
+    }
+  ]
+}
