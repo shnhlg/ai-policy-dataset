@@ -1,0 +1,12 @@
+{
+  "run_at_utc": "2026-07-22T06:02:04+00:00",
+  "seed_rows": 26,
+  "verified_records": 18,
+  "failed_records": 8,
+  "countries_or_organisations": [
+    "中国",
+    "加拿大",
+    "美国",
+    "英国"
+  ]
+}
