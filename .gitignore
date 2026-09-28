@@ -1,37 +1,12 @@
-# Secrets and local configuration
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-credentials.json
-
-# Python
 __pycache__/
 *.py[cod]
 .venv/
-venv/
-.pytest_cache/
-
-# Runtime and build artifacts
+# Include processed data and supplemental attachments through Git LFS.
+.env
+.env.local
+raw-root.txt
 *.log
-*.tmp
+*.db-wal
+*.db-shm
 *.building.db
-.DS_Store
-Thumbs.db
-
-# Raw corpus is intentionally excluded from Git
-data/raw/
-raw/
-
-# Large local caches and temporary exports
-.cache/
-cache/
-downloads/
-tmp/
-temp/
-*.zip
-*.7z
-*.tar
-*.tar.gz
-
+.test-work/

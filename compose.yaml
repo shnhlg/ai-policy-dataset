@@ -1,0 +1,12 @@
+services:
+  ai-policy-viewer:
+    build: .
+    container_name: ai-policy-viewer
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUTF8=1
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

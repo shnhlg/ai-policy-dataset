@@ -1,0 +1,3 @@
+# Offline browsing, Chinese titles, categories and body reading use Python stdlib only.
+# Python >= 3.11 with SQLite FTS5 trigram support; tested with Python 3.13.7.
+# No pip installation and no API key are required for viewing the existing dataset.

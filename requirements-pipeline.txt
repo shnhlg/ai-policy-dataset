@@ -1,0 +1,4 @@
+# Optional: only for re-running policy collection / extraction / local model scripts.
+-r requirements.txt
+PyPDF2>=3,<4
+torch>=2,<3
