@@ -19,9 +19,12 @@ def main() -> None:
     for row in rows:
         source = ROOT / row["raw_file"]
         target = raw_dir / source.name
-        if source.exists() and not target.exists():
-            shutil.copy2(source, target)
-        row["raw_file_library"] = str(target.relative_to(ROOT)).replace("\\", "/")
+        if source.exists():
+            if not target.exists():
+                shutil.copy2(source, target)
+            row["raw_file_library"] = str(target.relative_to(ROOT)).replace("\\", "/")
+        else:
+            row["raw_file_library"] = ""
     with (OUT / "chinese_official_ai_policies.csv").open("w", encoding="utf-8-sig", newline="") as handle:
         keys = list(rows[0]) if rows else []
         writer = csv.DictWriter(handle, fieldnames=keys); writer.writeheader(); writer.writerows(rows)
@@ -31,7 +34,7 @@ def main() -> None:
             record = json.loads(line)
             if record.get("policy_id") in wanted:
                 target.write(json.dumps(record, ensure_ascii=False) + "\n")
-    (OUT / "README.md").write_text("# 中文官方原始文件库\n\n仅保留中文原始语言、已成功提取正文、来源校验通过的 AI 政策。`raw/` 为独立复制的官方原始 HTML/PDF；CSV 为结构化索引；JSONL 为完整正文。\n", encoding="utf-8")
+    (OUT / "README.md").write_text("# 中文官方原始文件库\n\n保留中文原始语言、来源校验通过的 AI 政策元数据。`raw/` 为已取得的官方原始 HTML/PDF；CSV 为结构化索引；JSONL 中仅对成功提取的记录提供正文，其他记录保留提取状态和原因。\n", encoding="utf-8")
     print(f"Chinese official library: {len(rows)} records; raw files copied to {raw_dir}")
 
 

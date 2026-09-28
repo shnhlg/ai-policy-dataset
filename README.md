@@ -1,69 +1,86 @@
-﻿# 全球 AI 政策数据集
+# AI 政策资料库
 
-## 完整数据集在哪 / Where Is the Full Dataset
+用于检索、筛选和阅读各国及国际组织发布的 AI 政策资料。保留原文标题、发布机构、日期、官方来源、正文提取状态和审核记录。
 
-完整数据集（结构化主库、全文正文、检索数据库、中文官方库、原始附件等，约 11 GB）托管在 Hugging Face：
+当前本地版本收录 10,547 条记录，其中 2,744 条标记为 AI 相关。并非所有记录都有可用正文或原件；页面会分别标注。搜索覆盖标题、机构、主题和摘要，尚不检索完整正文。
 
-- https://huggingface.co/datasets/LinkwiseSH/ai-policy-dataset
-- 国内镜像 / China mirror: https://hf-mirror.com/datasets/LinkwiseSH/ai-policy-dataset
+## 数据文件
 
-The full dataset (structured tables, full texts, search database, official Chinese library, raw attachments, ~11 GB) is hosted on Hugging Face at the links above. This repository contains the code / lightweight package; download the dataset from Hugging Face to run the search window.
+代码和轻量补充材料在 GitHub，完整数据包在 [Hugging Face](https://huggingface.co/datasets/LinkwiseSH/ai-policy-dataset)（[国内镜像](https://hf-mirror.com/datasets/LinkwiseSH/ai-policy-dataset)）。两处发布独立进行，不应假定云端数据包已与本地最新版本同步。
 
-> 已恢复原版网页、10,542 条检索记录、完整正文、翻译与分类结果。双击 `start.bat` 启动。下方是早期采集阶段的历史说明，不代表当前数据量；不要为了查看数据重新运行采集或翻译。
+启动前，目录至少需要：
 
-本项目从公开、官方来源采集国内外 AI 相关政策，并保留来源、抓取时间、原始文件哈希与版本线索。政策标题、摘要、摘录和全文均保持官方原始语言。当前处于第一批种子采集阶段，目标是形成可扩展至 10,000+ 条的持续更新数据集。
-
-## 快速开始
-
-```powershell
-python src/collect_seeds.py
-python src/validate_dataset.py
-python src/discover_index_candidates.py
-python src/ingest_beijing_candidates.py
-python src/build_master_dataset.py
-python src/validate_dataset.py
-python src/report_status.py
-python src/enrich_policy_content.py
-python src/collect_govuk.py --limit 100
+```text
+data/processed/ai_policies_content_master.csv
+data/processed/policy_fulltexts.jsonl
 ```
 
-输出文件位于 `data/processed/`：
+原始附件放在 `data/raw/` 或 `data/official_zh/raw/`。缺少原件不会阻止启动，但相应记录不会显示可用下载入口。若克隆后得到 Git LFS 指针文件，需要先运行 `git lfs pull` 下载仓库内的 LFS 文件；这不会自动下载外部完整数据包。
 
-- `policies.csv`：成功抓取并验证的政策条目
-- `failed_fetches.csv`：需要后续检查的失败来源
-- `collection_summary.json`：本次运行摘要
-- `policy_candidates.csv`：从官方专题目录发现、待人工规则复核的候选项
-- `beijing_policies.csv`：已由北京官方政策页验证的地方政策
-- `ai_policies_master.csv`：已去重的主数据集
-- `master_excluded_incomplete.csv`：官方页面可访问但关键字段待补全的记录，不计入主数据集
-- `status_report.json`：主数据集的数量、覆盖和待处理项摘要
-- `ai_policies_enriched.csv`：增加政策摘要、目标、措施、监管要求等内容字段的主表
-- `ai_policies_content_master.csv`：正文成功提取、可直接用于内容分析的政策主表
-- `content_extraction_failures.csv`：目录已验证但正文尚未获取的记录，不计入内容主表
-- `policy_fulltexts.jsonl`：与主表按 `policy_id` 关联的完整正文
+`dataset_manifest.json` 记录本次验收的数据数量和 SHA256。若下载的数据包与之不同，验证工具会明确报错，不会自动修改或补造记录。
 
-## 采集原则
-
-- 只有官方来源的独立政策文件进入主数据集。
-- 聚合平台只用于发现线索，不能替代原始发布页面。
-- 同一政策的转载、镜像和多语言版本不重复计数。
-- 不绕过验证码、登录、robots 限制或访问控制。
-- 每个站点按低频率访问，并保存抓取状态以便增量更新。
-
-## 下一阶段
-
-1. 从中国中央及地方政策专题页发现候选记录。
-2. 接入欧盟、美国、英国、加拿大、日本、新加坡等官方目录。
-3. 增加版本关系、近似去重、全文解析与多语言摘要。
-4. 以 200、1,000、2,000、5,000、10,000 条为质量验收节点。
-## Docker 运行（可选）
-
-本项目自带容器化启动，不需要在宿主机安装 Python：
+## Docker 启动
 
 ```powershell
 docker compose up -d --build
 ```
 
-浏览器打开 http://127.0.0.1:8765 。常用命令：`docker compose logs -f ai-policy-viewer` 看日志，`docker compose down` 停止。
+打开 [本机检索页](http://127.0.0.1:8765)。首次启动需要复制运行数据并建立索引，请用 `docker compose logs -f ai-policy-viewer` 查看进度。
 
-注意：仓库不包含大数据文件（正文 JSONL、`viewer/policy_search.db`、原始附件等），容器通过挂载本目录运行；请在完整恢复包目录内执行上面的命令。
+应用代码打入镜像，数据源以只读方式挂载。SQLite 和正文运行副本存放在 Docker 的 `policy-runtime` 命名卷，不再直接在 Windows 项目挂载上执行数据库查询。镜像固定 Python 基础版本及摘要，索引在运行环境构建并检查 FTS 完整性。
+
+后续启动会复用未变化的数据版本。原始数据或索引构建代码变化时，先生成独立版本，验证完成后才切换；旧版本保留在卷内。`docker compose down` 不会删除数据卷。**不要使用 `down -v` 清理运行数据。**
+
+更新时可先准备新版本，成功后再重建服务容器，缩短停机时间：
+
+```powershell
+docker compose build
+docker compose run --rm --no-deps ai-policy-viewer python scripts/prepare_runtime.py
+docker compose up -d
+```
+
+健康状态：`docker compose ps`。健康接口：[本机健康检查](http://127.0.0.1:8765/health)。服务默认仅对本机开放。
+
+## 验证
+
+```powershell
+docker compose run --rm --no-deps ai-policy-viewer python scripts/test_runtime.py
+docker compose run --rm --no-deps ai-policy-viewer python scripts/verify_restore.py
+```
+
+第一条运行接口与回归测试；第二条核对源文件哈希、唯一编号、每条正文的位置与字数、隔离状态和 FTS 完整性。原件未提供会计入缺失数量，不会被当作“有 PDF”。
+
+不使用 Docker 时，可运行 `python scripts/launch.py` 或双击 `start.bat`。需要 Python 3.11+ 和支持 FTS5 trigram 的 SQLite；初次运行或版本变化会重建本地索引。测试前先完成索引构建，再运行 `python -m unittest discover -s tests -v`。
+
+## 界面中的状态
+
+- **正文已提取**：存在提取文本，不等于已经逐条确认法规效力或法律性质。
+- **非正文 / 混合文档**：保留目录记录，隔离正文，等待修复或拆分。
+- **正文待 OCR**：没有可检索文本；如果 PDF 存在，仍可打开原件。
+- **摘要含网页导航**：暂不展示该摘要，原始提取结果保留在折叠的审核记录中。
+- **可查看 PDF / 其他原件**：当前数据包确实能访问到文件。
+
+筛选选项括号内为全库数量，结果区显示当前条件的匹配数量。国家和语言的常见同义标签在检索索引中合并，源 CSV 的原始值保留。检索条件保存在页面 URL，可复制链接或使用浏览器前进、后退。
+
+## 更新数据与回退
+
+不要为“打开资料库”重跑采集、翻译和模型审查脚本。它们是维护工具，不是启动步骤。
+
+`src/enrich_policy_content.py` 默认把新结果写到 `data/staging/` 的独立目录，不覆盖当前正文库。提取超出页数限制的 PDF 会明确失败，不把截断文本标成完整提取。审核新输出后，应在停止发布操作的情况下成套替换 CSV 和 JSONL，再准备运行版本。
+
+`scripts/normalize_csv_headers.py <CSV路径>` 仅在重复列的每一行内容都一致时合并列；有冲突立即中止。
+
+运行卷的 `releases/<版本号>/ready.json` 记录输入哈希、SQLite 版本和记录数量，`CURRENT` 记录最近准备完成的版本。需要回退时，在 `.env` 设置 `AI_POLICY_RELEASE=<已存在的20位版本号>` 并重新运行 `docker compose up -d`；同时使用与该数据版本匹配的代码镜像。完成回退后不要直接删除旧版本。
+
+## 项目目录
+
+| 目录 | 内容 |
+|---|---|
+| `viewer/` | 检索服务、索引构建、页面和标题译文 |
+| `src/` | 来源采集、内容提取和结构化处理 |
+| `scripts/` | 启动、运行版本准备、验证和数据维护工具 |
+| `tests/` | 接口、文件访问与数据状态回归测试 |
+| `data/official_zh/` | 中文官方来源的补充资料 |
+| `docs/` | 字段与历史处理说明 |
+
+旧的迁移清单用于对应历史恢复包；当前验证以 `dataset_manifest.json` 为准。模型审核是辅助标注，不应代替官方文本核对或人工判断。

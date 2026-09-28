@@ -4,3 +4,4 @@
 *.csv filter=lfs diff=lfs merge=lfs -text
 *.jsonl filter=lfs diff=lfs merge=lfs -text
 data/raw/** filter=lfs diff=lfs merge=lfs -text
+data/official_zh/raw/** filter=lfs diff=lfs merge=lfs -text
