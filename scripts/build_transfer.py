@@ -5,11 +5,12 @@ import hashlib
 import json
 import os
 import re
+import sys
 import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXCLUDED_DIRS = {'.git','.venv','__pycache__','.test-work'}
+EXCLUDED_DIRS = {'.git','.venv','__pycache__','.test-work','tmp','staging'}
 
 def digest(path):
     with path.open('rb') as f:
@@ -20,6 +21,7 @@ def included(path):
     return (path.is_file() and not set(rel.parts)&EXCLUDED_DIRS
             and path.name not in {'migration_manifest.json','raw-root.txt','.env','.env.local'}
             and path.suffix not in {'.pyc','.log','.zip'}
+            and not ('audit' in path.name and path.name.endswith('cache.jsonl'))
             and not path.name.endswith(('.db-wal','.db-shm','.building.db')))
 
 def row(path):
@@ -33,6 +35,10 @@ def main():
     output=args.output.resolve()
     if ROOT in output.parents:
         raise SystemExit('Place the ZIP outside the project directory.')
+    sys.path.insert(0, str(ROOT / 'viewer'))
+    from indexer import build_index, index_is_current
+    if not index_is_current():
+        build_index()
     snapshot_paths=[ROOT/'viewer/policy_search.db',ROOT/'data/processed/ai_policies_content_master.csv',
                     ROOT/'data/processed/policy_fulltexts.jsonl',ROOT/'viewer/title_translations.jsonl',
                     ROOT/'viewer/ai_review_results.jsonl',*sorted((ROOT/'viewer').glob('*.py'))]

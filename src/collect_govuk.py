@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
+from html_content import document_text
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'data'/'processed'; RAW=ROOT/'data'/'raw'
@@ -16,9 +17,7 @@ AI_RE=re.compile(r'\bartificial intelligence\b|\bgenerative ai\b|\bmachine learn
 
 def clean(s:str)->str:return re.sub(r'\s+',' ',s or '').strip()
 def text(body:bytes)->str:
- s=BeautifulSoup(body,'html.parser')
- [x.decompose() for x in s(['script','style','noscript','svg'])]
- return clean(s.get_text(' ',strip=True))
+ return document_text(body)
 def main()->int:
  p=argparse.ArgumentParser();p.add_argument('--limit',type=int,default=100);p.add_argument('--start',type=int,default=0);p.add_argument('--query',default='artificial intelligence');p.add_argument('--label',default='');p.add_argument('--append',action='store_true');p.add_argument('--pause',type=float,default=.4);a=p.parse_args()
  sess=requests.Session();sess.headers.update(HEAD); results=[];start=a.start

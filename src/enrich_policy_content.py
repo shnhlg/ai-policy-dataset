@@ -7,14 +7,17 @@ puts only short, source-language excerpts in the tabular policy dataset.
 from __future__ import annotations
 
 import csv
+import argparse
 import hashlib
 import json
 import re
+import tempfile
 from collections import OrderedDict
 from pathlib import Path
 
 from bs4 import BeautifulSoup
 from PyPDF2 import PdfReader
+from html_content import document_text
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,16 +57,15 @@ def clean(text: str) -> str:
 
 
 def extract_html(path: Path) -> str:
-    soup = BeautifulSoup(path.read_bytes(), "html.parser")
-    for node in soup(["script", "style", "noscript", "svg"]):
-        node.decompose()
-    return clean(soup.get_text(" ", strip=True))
+    return document_text(path.read_bytes())
 
 
 def extract_pdf(path: Path) -> str:
     if MAX_PDF_BYTES is not None and path.stat().st_size > MAX_PDF_BYTES:
         raise ValueError(f"PDF exceeds {MAX_PDF_BYTES} byte extraction safety limit")
     reader = PdfReader(str(path))
+    if MAX_PDF_PAGES is not None and len(reader.pages) > MAX_PDF_PAGES:
+        raise ValueError(f"PDF exceeds {MAX_PDF_PAGES} page safety limit; full extraction required")
     pages = reader.pages if MAX_PDF_PAGES is None else reader.pages[:MAX_PDF_PAGES]
     return clean("\n".join(page.extract_text() or "" for page in pages))
 
@@ -119,6 +121,21 @@ def summary_original(row: dict[str, str], objectives: str, measures: str) -> str
 
 
 def main() -> int:
+    global ENRICHED, CONTENT_MASTER, CONTENT_FAILURES, FULLTEXT
+    parser = argparse.ArgumentParser(description='生成待审核的正文版本，不覆盖正在使用的数据。')
+    parser.add_argument('--output-dir', type=Path)
+    args = parser.parse_args()
+    staging_root = ROOT / 'data' / 'staging'
+    staging_root.mkdir(parents=True, exist_ok=True)
+    output = (args.output_dir or Path(tempfile.mkdtemp(prefix='enrich-', dir=staging_root))).resolve()
+    if output == DATA_DIR.resolve():
+        raise SystemExit('不能直接写入 data/processed；请先生成并验证独立版本。')
+    output.mkdir(parents=True, exist_ok=True)
+    targets = [output / path.name for path in (ENRICHED, CONTENT_MASTER, CONTENT_FAILURES, FULLTEXT)]
+    if any(path.exists() for path in targets):
+        raise SystemExit('输出目录已有同名文件，请使用新的目录。')
+    ENRICHED, CONTENT_MASTER, CONTENT_FAILURES, FULLTEXT = targets
+    print(f'待审核输出目录：{output}', flush=True)
     with MASTER.open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
     if not rows:
@@ -131,6 +148,7 @@ def main() -> int:
         "fulltext_char_count", "content_extraction_status", "content_extraction_error",
     ]
     successful = 0
+    fieldnames = list(dict.fromkeys(fieldnames))
     with ENRICHED.open("w", encoding="utf-8-sig", newline="") as enriched_handle, \
             CONTENT_MASTER.open("w", encoding="utf-8-sig", newline="") as content_handle, \
             CONTENT_FAILURES.open("w", encoding="utf-8-sig", newline="") as failures_handle, \
