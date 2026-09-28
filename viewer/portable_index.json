@@ -1,0 +1,87 @@
+[
+  {
+    "path": "viewer/policy_search.db",
+    "bytes": 172187648,
+    "sha256": "29f2a6d105ccc618c4d8044d5aaa760db4846a64796520e49aed9fed6927e9fc"
+  },
+  {
+    "path": "data/processed/ai_policies_content_master.csv",
+    "bytes": 42732898,
+    "sha256": "a9aa0a65a6c891bcd0c96a26c93ee36a91e627f5c99a39ae04dba369e5bdba64"
+  },
+  {
+    "path": "data/processed/policy_fulltexts.jsonl",
+    "bytes": 1380748984,
+    "sha256": "72eda02ba1f45aa61699df8962b2f5ff48dcfe7acec82b829fafe29023c2d65e"
+  },
+  {
+    "path": "viewer/title_translations.jsonl",
+    "bytes": 3055319,
+    "sha256": "7b888e2be38253176df054c356f567bd5b539badf288106c95371e020ac47ece"
+  },
+  {
+    "path": "viewer/ai_review_results.jsonl",
+    "bytes": 2840681,
+    "sha256": "4b407a4ed93b09eeebc5d243b3e31fcb0c2583a4c89c7608a18163db4aa82c7a"
+  },
+  {
+    "path": "viewer/ai_semantic_review.py",
+    "bytes": 6138,
+    "sha256": "b632f8fee9ddfce473f4cad645572761646d760f81073c15b5d485dbc7bcdbe2"
+  },
+  {
+    "path": "viewer/api_translate_titles.py",
+    "bytes": 9460,
+    "sha256": "e7691ce653116f1c17758344c8f68d57d9b4e146f187aab8212449a423d23fe8"
+  },
+  {
+    "path": "viewer/app.py",
+    "bytes": 15020,
+    "sha256": "f349c2cb57d84ec530462c584b0637b54c5150cc03d32b8bf6ff4e7ce7c2a494"
+  },
+  {
+    "path": "viewer/contextual_translate_titles.py",
+    "bytes": 8710,
+    "sha256": "171fa800174d65d15a9868fa47178ee1cd290e96584feb477f08a2466a47cf8e"
+  },
+  {
+    "path": "viewer/finalize_ai_review.py",
+    "bytes": 5794,
+    "sha256": "2fd4afa609607ded70d49f6c2fcbb94b581515280cb4da244c73fccea552ed10"
+  },
+  {
+    "path": "viewer/finalize_title_review.py",
+    "bytes": 3086,
+    "sha256": "974d2b1e48c610b61263f5450cdd45e56a4773abba503dd2b7c88d76499fbd29"
+  },
+  {
+    "path": "viewer/indexer.py",
+    "bytes": 13381,
+    "sha256": "598af15007aac47ad08d97aeb31f1a5f7e296d0a5ba55f6b022bdcc12b5666bc"
+  },
+  {
+    "path": "viewer/portable.py",
+    "bytes": 2249,
+    "sha256": "f3af3f6c6b4625645c8894627f16bf2384b46df74c51caa4487deba632c62eb8"
+  },
+  {
+    "path": "viewer/relevance.py",
+    "bytes": 2159,
+    "sha256": "b5dbcf30b3702e2df9dea06ed73b3f540a9794335e379e61d065c25cfd22b35a"
+  },
+  {
+    "path": "viewer/taxonomy.py",
+    "bytes": 9797,
+    "sha256": "c271ba3737494ef4872a174526afaafc8f628a6a05561b4ca2050c3bffb71b34"
+  },
+  {
+    "path": "viewer/translate_titles.py",
+    "bytes": 4036,
+    "sha256": "005ce6629c1de9ad8bc2c5460a76686405ac8a8338d992e39f25646a471bae2b"
+  },
+  {
+    "path": "viewer/translation_quality.py",
+    "bytes": 7512,
+    "sha256": "0c96e195b3aaff2a7c2b3cd1cf0f5fd7194f30e1ad0df2d5aefd6a8d0fe9414a"
+  }
+]
