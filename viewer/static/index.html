@@ -11,7 +11,6 @@
   <header class="site-header">
     <div class="brand-mark" aria-hidden="true">策</div>
     <div class="brand-copy">
-      <p class="eyebrow">LOCAL POLICY ARCHIVE</p>
       <h1>AI 政策资料库</h1>
     </div>
     <div class="header-status"><span class="status-dot"></span>本地数据 · 原始语言</div>
@@ -20,14 +19,13 @@
   <main>
     <section class="hero" aria-labelledby="hero-title">
       <div>
-        <p class="section-kicker">政策不该只躺在表格里</p>
-        <h2 id="hero-title">查找、筛选并阅读<br>全球 AI 政策原文</h2>
-        <p class="hero-note">按标题、政策主题、发布机构、国家或摘要关键词检索；打开详情可阅读完整正文。</p>
+        <h2 id="hero-title">政策检索</h2>
+        <p class="hero-note">检索标题、机构、主题和摘要；正文与原件是否可用，在每条记录中单独标注。</p>
       </div>
       <div class="stats-grid" aria-label="数据概览">
-        <article><strong id="stat-total">—</strong><span>政策文件</span></article>
+        <article><strong id="stat-total">—</strong><span>全库记录</span></article>
         <article><strong id="stat-jurisdictions">—</strong><span>国家与机构</span></article>
-        <article><strong id="stat-languages">—</strong><span>原始语言</span></article>
+        <article><strong id="stat-languages">—</strong><span>已知语言</span></article>
         <article><strong id="stat-years">—</strong><span>时间跨度</span></article>
       </div>
     </section>
@@ -42,18 +40,21 @@
       <button id="reset-button" class="text-button" type="button">清除条件</button>
     </section>
 
+    <button id="toggle-filters" type="button" aria-expanded="false" aria-controls="filters">筛选条件</button>
     <div class="workspace">
-      <aside class="filter-panel" aria-label="筛选条件">
+      <aside id="filters" class="filter-panel" aria-label="筛选条件">
         <div class="panel-heading">
-          <div><span class="small-label">FILTERS</span><h3>缩小范围</h3></div>
+          <div><h3>筛选条件</h3></div>
           <span id="active-filter-count" class="count-badge">0</span>
         </div>
         <label>AI 相关性<select id="filter-relevance"><option value="high">清洗后相关（推荐）</option><option value="ai_related">仅 AI 新复核相关</option><option value="review">待人工复核</option><option value="unrelated">AI 复核无关（隔离）</option><option value="all">全部原始记录</option></select></label>
+        <p class="filter-note">选项括号内为全库数量，不随当前筛选变化。</p>
         <label>国家 / 机构<select id="filter-country"><option value="">全部</option></select></label>
         <label>年份<select id="filter-year"><option value="">全部</option></select></label>
         <label>语言<select id="filter-language"><option value="">全部</option></select></label>
         <label>政策类型<select id="filter-type"><option value="">全部</option></select></label>
-        <label>原始文件<select id="filter-file"><option value="">全部格式</option><option value="pdf">仅有 PDF</option><option value="non_pdf">非 PDF</option></select></label>
+        <label>原始文件<select id="filter-file"><option value="">全部记录</option><option value="pdf">可查看 PDF</option><option value="non_pdf">可查看其他原件</option><option value="missing">原件未提供</option></select></label>
+        <label>正文状态<select id="filter-body"><option value="">全部状态</option><option value="extracted">正文已提取</option><option value="ocr_required">待 OCR</option><option value="non_body">非正文，已隔离</option><option value="mixed_source">混合文档，待拆分</option></select></label>
         <div class="filter-divider"><span>内容分类</span></div>
         <label>政策主题<select id="filter-topic-category"><option value="">全部主题</option></select></label>
         <label>政策手段<select id="filter-instrument-category"><option value="">全部手段</option></select></label>
@@ -66,7 +67,7 @@
 
       <section class="results-panel" aria-live="polite">
         <div class="results-heading">
-          <div><span class="small-label">RESULTS</span><h3 id="result-summary">正在读取数据…</h3></div>
+          <div><h3 id="result-summary">正在读取数据…</h3></div>
           <div class="result-controls">
             <label class="page-size">标题<select id="title-mode"><option value="zh">中文</option><option value="original">原文</option><option value="bilingual">双语</option></select></label>
             <label class="page-size">每页<select id="page-size"><option>10</option><option selected>20</option><option>50</option></select>条</label>
@@ -83,9 +84,9 @@
   </main>
 
   <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
-  <aside id="detail-drawer" class="detail-drawer" aria-label="政策详情" aria-hidden="true">
+  <aside id="detail-drawer" class="detail-drawer" role="dialog" aria-modal="true" aria-label="政策详情" aria-hidden="true" inert>
     <div class="drawer-toolbar">
-      <span class="small-label">POLICY RECORD</span>
+      <span class="small-label">政策记录</span>
       <button id="close-drawer" type="button" aria-label="关闭详情">×</button>
     </div>
     <div id="detail-content" class="detail-content"></div>
