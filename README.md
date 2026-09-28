@@ -1,4 +1,4 @@
-﻿# 国内外人工智能政策数据集
+﻿# 全球 AI 政策数据集
 
 ## 完整数据集在哪 / Where Is the Full Dataset
 
@@ -9,74 +9,61 @@
 
 The full dataset (structured tables, full texts, search database, official Chinese library, raw attachments, ~11 GB) is hosted on Hugging Face at the links above. This repository contains the code / lightweight package; download the dataset from Hugging Face to run the search window.
 
-本仓库用于管理人工智能政策数据集的数据库、检索程序、清洗与翻译代码，以及跨电脑恢复和验证脚本。
+> 已恢复原版网页、10,542 条检索记录、完整正文、翻译与分类结果。双击 `start.bat` 启动。下方是早期采集阶段的历史说明，不代表当前数据量；不要为了查看数据重新运行采集或翻译。
 
-## 当前发布包状态
+本项目从公开、官方来源采集国内外 AI 相关政策，并保留来源、抓取时间、原始文件哈希与版本线索。政策标题、摘要、摘录和全文均保持官方原始语言。当前处于第一批种子采集阶段，目标是形成可扩展至 10,000+ 条的持续更新数据集。
 
-本发布包从 `D:\codex\公开数据数据集` 生成。迁移后的 D 盘副本目前包含政策原始附件，但没有找到此前生成的以下成果：
+## 快速开始
 
-- `viewer/policy_search.db`：全文检索数据库；
-- `viewer/`：可视化检索窗口及索引代码；
-- `data/processed/`：结构化主库、清洗库、隔离库、待人工复核库和正文 JSONL；
-- 标题翻译缓存、AI 复核缓存及相关运行脚本。
-
-因此，本包暂时属于**可上传、可验证、但待补全的 GitHub 发布包**。`data/database/raw_policy_catalog.db` 是根据 D 盘现存原始附件重新建立的目录数据库，不是原来的全文检索数据库。
-
-## 已完成成果统计
-
-根据此前已经完成并核验的成果：
-
-| 指标 | 数量 |
-| --- | ---: |
-| 结构化总记录 | 10,542 |
-| 清洗后相关 | 2,739 |
-| AI 复核无关并隔离 | 6,874 |
-| 待人工复核 | 929 |
-| 完成上下文译审的非中文标题 | 2,674 |
-
-原始记录在清洗过程中不删除，采用清洗库、隔离库和待人工复核库三层输出。
-
-## 当前 D 盘原始附件盘点
-
-| 指标 | 数量 |
-| --- | ---: |
-| 政策附件文件 | 19,699 |
-| 唯一政策编号 | 19,528 |
-| PDF | 17,828 |
-| HTML | 1,871 |
-| 总体积 | 约 11.36 GB |
-
-附件数不等于政策记录数。同一政策编号可能存在多个抓取版本或关联文件。
-
-## 目录
-
-```text
-ai-policy-dataset/
-├─ data/
-│  └─ database/
-│     └─ raw_policy_catalog.db   # 原始附件目录数据库
-├─ scripts/
-│  ├─ build_raw_catalog.py      # 从 data/raw 重建目录数据库
-│  ├─ verify_release.py         # 发布包完整性与敏感信息检查
-│  └─ prepare_full_release.py   # 检测并复制恢复后的完整数据库与代码
-├─ .gitattributes               # Git LFS 规则
-├─ .gitignore
-├─ DATABASE_STATUS.md
-└─ README.md
+```powershell
+python src/collect_seeds.py
+python src/validate_dataset.py
+python src/discover_index_candidates.py
+python src/ingest_beijing_candidates.py
+python src/build_master_dataset.py
+python src/validate_dataset.py
+python src/report_status.py
+python src/enrich_policy_content.py
+python src/collect_govuk.py --limit 100
 ```
 
+输出文件位于 `data/processed/`：
 
-## 大文件策略
+- `policies.csv`：成功抓取并验证的政策条目
+- `failed_fetches.csv`：需要后续检查的失败来源
+- `collection_summary.json`：本次运行摘要
+- `policy_candidates.csv`：从官方专题目录发现、待人工规则复核的候选项
+- `beijing_policies.csv`：已由北京官方政策页验证的地方政策
+- `ai_policies_master.csv`：已去重的主数据集
+- `master_excluded_incomplete.csv`：官方页面可访问但关键字段待补全的记录，不计入主数据集
+- `status_report.json`：主数据集的数量、覆盖和待处理项摘要
+- `ai_policies_enriched.csv`：增加政策摘要、目标、措施、监管要求等内容字段的主表
+- `ai_policies_content_master.csv`：正文成功提取、可直接用于内容分析的政策主表
+- `content_extraction_failures.csv`：目录已验证但正文尚未获取的记录，不计入内容主表
+- `policy_fulltexts.jsonl`：与主表按 `policy_id` 关联的完整正文
 
-普通 GitHub 仓库会阻止超过 100 MiB 的单个文件。本包已通过 `.gitattributes` 将 SQLite 数据库和压缩数据文件交给 Git LFS。原始 PDF/HTML 不进入 Git 仓库；建议作为独立备份、对象存储或分卷 Release 资产保存。
+## 采集原则
 
-## 安全要求
+- 只有官方来源的独立政策文件进入主数据集。
+- 聚合平台只用于发现线索，不能替代原始发布页面。
+- 同一政策的转载、镜像和多语言版本不重复计数。
+- 不绕过验证码、登录、robots 限制或访问控制。
+- 每个站点按低频率访问，并保存抓取状态以便增量更新。
 
-- 不提交 `.env`、API Key、浏览器 Cookie、代理凭据或本机绝对路径配置。
-- `OPENAI_API_KEY`、`OPENAI_BASE_URL` 等只能通过环境变量或本地 `.env` 提供。
-- 上传前必须运行 `verify_release.py`。
+## 下一阶段
 
-## 数据使用说明
+1. 从中国中央及地方政策专题页发现候选记录。
+2. 接入欧盟、美国、英国、加拿大、日本、新加坡等官方目录。
+3. 增加版本关系、近似去重、全文解析与多语言摘要。
+4. 以 200、1,000、2,000、5,000、10,000 条为质量验收节点。
+## Docker 运行（可选）
 
-AI 分类、摘要和中文译文用于检索与研究辅助，不构成法律意见或官方译文。正式引用前应回查政策官方链接与原始文件。
+本项目自带容器化启动，不需要在宿主机安装 Python：
 
+```powershell
+docker compose up -d --build
+```
+
+浏览器打开 http://127.0.0.1:8765 。常用命令：`docker compose logs -f ai-policy-viewer` 看日志，`docker compose down` 停止。
+
+注意：仓库不包含大数据文件（正文 JSONL、`viewer/policy_search.db`、原始附件等），容器通过挂载本目录运行；请在完整恢复包目录内执行上面的命令。

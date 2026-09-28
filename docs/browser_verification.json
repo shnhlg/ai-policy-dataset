@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "browser": "Isolated headless Edge",
+  "checks": [
+    "initial 10542 records",
+    "default 2739 related",
+    "English query",
+    "original titles",
+    "bilingual titles",
+    "PDF filter",
+    "detail fulltext",
+    "reset filters"
+  ],
+  "pageErrors": []
+}
