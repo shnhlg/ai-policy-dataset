@@ -2,11 +2,11 @@
 
 用于检索、筛选和阅读各国及国际组织发布的 AI 政策资料。保留原文标题、发布机构、日期、官方来源、正文提取状态和审核记录。
 
-当前本地版本收录 10,547 条记录，其中 2,744 条标记为 AI 相关。并非所有记录都有可用正文或原件；页面会分别标注。搜索覆盖标题、机构、主题和摘要，尚不检索完整正文。
+当前验收版本收录 10,547 条记录，其中 2,744 条标记为 AI 相关。并非所有记录都有可用正文或原件；页面会分别标注。搜索覆盖标题、机构、主题和摘要，尚不检索完整正文。
 
 ## 数据文件
 
-代码和轻量补充材料在 GitHub，完整数据包在 [Hugging Face](https://huggingface.co/datasets/LinkwiseSH/ai-policy-dataset)（[国内镜像](https://hf-mirror.com/datasets/LinkwiseSH/ai-policy-dataset)）。两处发布独立进行，不应假定云端数据包已与本地最新版本同步。
+代码和轻量补充材料在 GitHub，完整数据包在 [Hugging Face](https://huggingface.co/datasets/LinkwiseSH/ai-policy-dataset)（[国内镜像](https://hf-mirror.com/datasets/LinkwiseSH/ai-policy-dataset)）。代码、在线服务和下载数据包分别更新，使用时请核对各自版本。
 
 启动前，目录至少需要：
 
@@ -40,6 +40,8 @@ docker compose up -d
 ```
 
 健康状态：`docker compose ps`。健康接口：[本机健康检查](http://127.0.0.1:8765/health)。服务默认仅对本机开放。
+
+公网访问可通过反向代理或隧道连接该端口。网页文案面向在线读者；HTML、CSS、JavaScript 支持 gzip 与 ETag 校验，刷新未变化的资源返回 304。较大的 JSON 响应也支持 gzip，接口仍实时读取当前运行版本。PDF 保留分段读取，避免先下载完整文件再阅读。
 
 ## 验证
 

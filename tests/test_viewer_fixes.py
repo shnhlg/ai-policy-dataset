@@ -1,3 +1,4 @@
+import gzip
 import json
 import sqlite3
 import sys
@@ -7,7 +8,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'viewer'))
-from app import byte_range, Handler, dataset_version
+from app import accepts_gzip, byte_range, Handler, dataset_version
 from indexer import DB_PATH, index_is_current
 from quality import clean_summary, country, language
 
@@ -104,8 +105,54 @@ class ViewerFixTests(unittest.TestCase):
         self.assertIs(first, second)
         self.assertEqual(first['raw_available'] + first['raw_missing'], first['total'])
 
+    def test_compressed_json_matches_plain_response(self):
+        for path in ('/api/stats', '/api/search?relevance=high'):
+            plain = self.get(path)
+            with urlopen(Request(self.url + path, headers={'Accept-Encoding': 'gzip'})) as response:
+                self.assertEqual(response.headers['Content-Encoding'], 'gzip')
+                self.assertEqual(response.headers['Vary'], 'Accept-Encoding')
+                self.assertEqual(response.headers['Cache-Control'], 'no-store')
+                self.assertEqual(json.loads(gzip.decompress(response.read())), plain)
+
+    def test_static_compression_and_revalidation(self):
+        for path in ('/', '/app.js', '/styles.css'):
+            with urlopen(self.url + path) as response:
+                plain = response.read()
+                plain_etag = response.headers['ETag']
+            with urlopen(Request(self.url + path, headers={'Accept-Encoding': 'gzip'})) as response:
+                zipped = response.read()
+                etag = response.headers['ETag']
+                self.assertEqual(gzip.decompress(zipped), plain)
+                self.assertLess(len(zipped), len(plain))
+                self.assertNotEqual(etag, plain_etag)
+            with self.assertRaises(HTTPError) as error:
+                urlopen(Request(self.url + path, headers={'Accept-Encoding': 'gzip', 'If-None-Match': 'W/' + etag}))
+            self.assertEqual(error.exception.code, 304)
+            self.assertEqual(error.exception.read(), b'')
+            self.assertEqual(error.exception.headers['Vary'], 'Accept-Encoding')
+            with urlopen(Request(self.url + path, method='HEAD', headers={'Accept-Encoding': 'gzip'})) as response:
+                self.assertEqual(response.read(), b'')
+                self.assertEqual(int(response.headers['Content-Length']), len(zipped))
+
+    def test_explicitly_disabled_compression(self):
+        with urlopen(Request(self.url + '/app.js', headers={'Accept-Encoding': 'gzip;q=0, *;q=1'})) as response:
+            self.assertIsNone(response.headers.get('Content-Encoding'))
+
+    def test_public_page_copy(self):
+        for path in ('/', '/app.js'):
+            with urlopen(self.url + path) as response:
+                text = response.read().decode('utf-8')
+                self.assertNotIn('本地', text)
+                self.assertNotIn('当前数据包', text)
+
 
 class PureFunctionTests(unittest.TestCase):
+    def test_gzip_negotiation(self):
+        for header in ('gzip', 'br, gzip', 'gzip;q=0.5', '*;q=1'):
+            self.assertTrue(accepts_gzip(header))
+        for header in ('', 'br', 'gzip;q=0', 'gzip;q=invalid', '*;q=1, gzip;q=0'):
+            self.assertFalse(accepts_gzip(header))
+
     def test_range_parser(self):
         self.assertEqual(byte_range('bytes=0-9', 100), (0, 9))
         self.assertEqual(byte_range('bytes=-10', 100), (90, 99))

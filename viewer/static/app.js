@@ -17,10 +17,18 @@ function node(tag, className = "", text = "") {
 
 async function api(path, signal) {
   const timeout = AbortSignal.timeout(30000);
-  const response = await fetch(path, { signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
-  const body = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(body?.message || "无法读取本地数据，请确认检索窗口仍在运行。");
-  return body;
+  try {
+    const response = await fetch(path, { signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(body?.message || "服务暂时无法响应，请稍后重试。");
+    if (body === null) throw new Error("服务返回异常，请稍后重试。");
+    return body;
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    if (timeout.aborted) throw new Error("请求超时，请稍后重试。");
+    if (error instanceof TypeError) throw new Error("连接失败，请检查网络后重试。");
+    throw error;
+  }
 }
 
 function fillSelect(selector, items) {
@@ -232,7 +240,7 @@ async function openDetail(policyId) {
       const raw = node("a", "secondary", item.raw_is_pdf ? "查看原始 PDF" : "查看原始文件");
       raw.href = `/api/policies/${encodeURIComponent(policyId)}/raw`; raw.target = "_blank"; raw.rel = 'noopener';
       actions.append(raw);
-    } else actions.append(node('span', 'quality-note', '当前数据包未提供原件'));
+    } else actions.append(node('span', 'quality-note', '尚未收录原件'));
     content.append(actions);
     const audit = node('details', 'audit-details');
     audit.append(node('summary', '', '分类、提取状态与审核记录'));
@@ -275,7 +283,7 @@ async function openDetail(policyId) {
     content.insertBefore(bodySection, audit);
     if (item.body_available) await loadBody(policyId, bodyBox, bodySection, 0, controller.signal);
     else bodyBox.textContent = item.content_extraction_status === 'ocr_required'
-      ? (item.raw_available ? '原件可查看，正文待 OCR。请使用上方原件入口。' : '正文待 OCR；当前数据包也未提供原件。')
+      ? (item.raw_available ? '原件可查看，正文待 OCR。请使用上方原件入口。' : '正文待 OCR，原件尚未收录。')
       : `${extractionLabels[item.content_extraction_status] || '暂无可读正文'}。可尝试上方官方来源。`;
   } catch (error) {
     if (controller.signal.aborted) return;

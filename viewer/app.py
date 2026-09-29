@@ -1,8 +1,10 @@
-"""Local web application for browsing the AI policy dataset."""
+"""Web application for browsing the AI policy dataset."""
 
 from __future__ import annotations
 
 import argparse
+import gzip
+import hashlib
 import json
 import mimetypes
 import os
@@ -26,6 +28,30 @@ from portable import resolve_raw_file
 
 STATIC = Path(__file__).resolve().parent / "static"
 STATS_LOCK = threading.Lock()
+
+
+def accepts_gzip(header: str) -> bool:
+    qualities = {}
+    for entry in header.lower().split(','):
+        coding, *parameters = entry.strip().split(';')
+        quality = 1.0
+        for parameter in parameters:
+            key, _, value = parameter.strip().partition('=')
+            if key == 'q':
+                try:
+                    quality = float(value)
+                except ValueError:
+                    quality = 0.0
+        qualities[coding] = quality
+    return qualities.get('gzip', qualities.get('*', 0.0)) > 0
+
+
+@lru_cache(maxsize=24)
+def static_content(path: Path, modified: int, size: int, compressed: bool) -> tuple[bytes, str]:
+    body = path.read_bytes()
+    if compressed:
+        body = gzip.compress(body, compresslevel=5, mtime=0)
+    return body, '"' + hashlib.sha256(body).hexdigest() + '"'
 
 
 def dataset_version() -> tuple[int, int]:
@@ -87,6 +113,7 @@ def integer_param(params: dict[str, list[str]], name: str, default: int, minimum
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "AIPolicyViewer/1.0"
+    timeout = 30
 
     def log_message(self, format: str, *args: object) -> None:
         return
@@ -103,11 +130,17 @@ class Handler(BaseHTTPRequestHandler):
         super().end_headers()
 
     def json_response(self, payload: object, status: int = 200) -> None:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        body = json.dumps(payload, ensure_ascii=False, separators=(',', ':')).encode("utf-8")
+        compressed = len(body) >= 1024 and accepts_gzip(self.headers.get('Accept-Encoding', ''))
+        if compressed:
+            body = gzip.compress(body, compresslevel=5, mtime=0)
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header('Vary', 'Accept-Encoding')
+        if compressed:
+            self.send_header('Content-Encoding', 'gzip')
         self.end_headers()
         if self.command != 'HEAD':
             self.wfile.write(body)
@@ -325,7 +358,7 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError("没有对应的原始文件。", 404, "RAW_NOT_FOUND")
         path = resolve_raw_file(row["raw_file"])
         if path is None:
-            raise ApiError("当前数据包未提供此原件，可尝试官方来源链接。", 404, "RAW_NOT_FOUND")
+            raise ApiError("尚未收录此原件，可尝试官方来源链接。", 404, "RAW_NOT_FOUND")
         content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         stat = path.stat()
         etag = f'"{stat.st_mtime_ns:x}-{stat.st_size:x}"'
@@ -375,11 +408,22 @@ class Handler(BaseHTTPRequestHandler):
         path = (STATIC / relative).resolve()
         if STATIC.resolve() not in path.parents or not path.is_file():
             raise ApiError("页面不存在。", 404, "NOT_FOUND")
-        body = path.read_bytes()
-        self.send_response(HTTPStatus.OK)
+        stat = path.stat()
+        compressed = stat.st_size >= 1024 and path.suffix in {'.html', '.css', '.js', '.svg'} and accepts_gzip(self.headers.get('Accept-Encoding', ''))
+        body, etag = static_content(path, stat.st_mtime_ns, stat.st_size, compressed)
+        validators = [tag.strip().removeprefix('W/') for tag in self.headers.get('If-None-Match', '').split(',')]
+        not_modified = etag in validators or '*' in validators
+        self.send_response(304 if not_modified else HTTPStatus.OK)
+        self.send_header('ETag', etag)
+        self.send_header('Vary', 'Accept-Encoding')
+        self.send_header('Cache-Control', 'public, no-cache')
+        if not_modified:
+            self.end_headers()
+            return
         self.send_header("Content-Type", (mimetypes.guess_type(path.name)[0] or "application/octet-stream") + ("; charset=utf-8" if path.suffix in {".html", ".css", ".js"} else ""))
         self.send_header("Content-Length", str(len(body)))
-        self.send_header('Cache-Control', 'no-cache')
+        if compressed:
+            self.send_header('Content-Encoding', 'gzip')
         self.end_headers()
         if self.command != 'HEAD':
             self.wfile.write(body)
